@@ -1,13 +1,90 @@
 # Ground Zero
 
-This is an attempt to develop Homotopy Type Theory in [Lean 4](https://github.com/leanprover/lean4/).
+[![CI](https://github.com/mookichi/ground-zero-atp/actions/workflows/main.yml/badge.svg)](https://github.com/mookichi/ground-zero-atp/actions/workflows/main.yml)
 
-As in [gebner/hott3](https://github.com/gebner/hott3), no modifications to the Lean kernel are made, because library uses [large eliminator checker](https://github.com/rzrn/ground_zero/blob/master/GroundZero/Meta/HottTheory.lean) ported [from Lean 3](https://github.com/gebner/hott3/blob/master/src/hott/init/meta/support.lean). So stuff like this will print an error:
+Homotopy Type Theory in [Lean 4](https://github.com/leanprover/lean4/), extended
+with formalizations aimed at automated theorem provers and machine-learning
+kernels.
+
+This repository (`ground-zero-atp`) is a working derivative of
+[rzrn/ground_zero](https://github.com/rzrn/ground_zero): the HoTT library and
+its foundations are unchanged, and the additions described in
+[Extensions](#extensions) live on top of them.
+
+> **What is in this repository beyond the base library?** A machine-checked
+> proof that the Gaussian RBF kernel is positive semi-definite, plus kernel
+> learning applications built on it; the `path_simp` higher-order rewriting
+> tactic for path algebra; and an ATP-oriented documentation / audit
+> toolchain. The proof-texture details are in [AIPROVER.md](AIPROVER.md).
+
+As in [gebner/hott3](https://github.com/gebner/hott3), no modifications to the
+Lean kernel are made, because the library uses a
+[large eliminator checker](GroundZero/Meta/HottTheory.lean) ported
+[from Lean 3](https://github.com/gebner/hott3/blob/master/src/hott/init/meta/support.lean).
+So stuff like this will print an error:
 
 ```lean
 hott example {α : Type u} {a b : α} (p q : a = b) : p = q :=
 begin cases p; cases q; apply Id.refl end
 ```
+
+## Extensions
+
+### Gaussian RBF kernel: positive definiteness and kernel learning
+
+The centerpiece is a formal proof that the Gaussian RBF kernel
+`K(x, y) = exp(-ε²·ρ(x, y)²)` is positive semi-definite (PSD), together with
+kernel-method applications built on it.  The modules form an import chain
+`PosDef ← BinomTaylor ← RBF ← KernelLearn`:
+
+| Module | What is formalized |
+|---|---|
+| [`PosDef.lean`](PosDef.lean) | Finite sums (`sum`, `sumAdd`, `sum.ext`), finite Fubini (`sumSwap`), bilinear forms and Gram-matrix symmetry via the `IsSymmetric` typeclass (`biFormSymI`), quadratic forms, the `PSD` predicate, rank-1 kernels, PSD closure under addition — and the Gaussian PSD theorem **`gaussPsdD`** |
+| [`BinomTaylor.lean`](BinomTaylor.lean) | The factorial-normalized binomial theorem **`binomTaylor`**, proved with zero axioms: binomial coefficient `nCr` (Pascal recursion), the combinatorial identity `nCrFac` (`nCr n k · k! · (n-k)! = n!`), coefficient division `nCrDiv`; plus the series redefinition of exp (`expD`) and its additivity (`expAddD`) |
+| [`RBF.lean`](RBF.lean) | Radial basis functions as `k ∘ ρ` (kernel after metric); the D-world Gaussian RBF `gaussianRbfD`; the exp-world kernel theory (`rbfGaussEq`, `gaussSymm`, `kernelSym`, `expPos`, `kernelPos`, `expMonotone`, `kernelLeOne`) |
+| [`KernelLearn.lean`](KernelLearn.lean) | Kernel-method applications: Gram-matrix symmetry (`gramSym`), PSD of Gram matrices (`gramRbfNonneg`, `gramNonneg`), the representer system (`representer`, `featureMap`, `representerAsFeatures`), shift invariance (`gaussEqShift`, `representerShiftInvariant`), kernel ridge regression duality |
+| [`KernelUniversal.lean`](KernelUniversal.lean) | Universality of the RBF kernel in the Stone–Weierstrass sense: ring toolkit, midpoint / parallelogram identities (`midSquare`, `paral`), Gaussian bumps `bump a c x = exp(-a·(x-c)²)` |
+
+**Axiom discipline.** The PSD proof was progressively reduced across the
+evaluation rounds documented in `AIPROVER.md` §10, from an initial block of
+`exp` axioms plus `infSumFinSwap` / `infSumNonneg`, to a final measured set.
+As of this snapshot, `#print axioms gaussPsdD` reports:
+
+```
+{GroundZero, uaweak, uaweakβ, convAbsExpD, convExpD, infSumIsLim,
+ infSumNonneg, mertens, Quot.sound}
+```
+
+i.e. five real-analysis axioms on top of the library's foundations (two
+convergence hypotheses for the Gaussian series, a limit law, series
+non-negativity, and Mertens' theorem for the Cauchy product).  The whole
+`exp`-block axioms (`exp`, `expAdd`, `expSeries`), `cauchyProduct`,
+`infSumFinSwap`, and `infSumLin` were eliminated as axioms and replaced by
+definitions and theorems.  The same five axioms are what
+`KernelLearn.gramRbfNonneg` and `KernelLearn.gramNonneg` depend on.
+
+### `path_simp`: higher-order path rewriting
+
+A rewriting tactic for hott path algebra, defined in
+[`GroundZero/Meta/Tactic.lean`](GroundZero/Meta/Tactic.lean):
+
+* groupoid laws (`invInv`, `explodeInv`, cancel lemmas, ...) and `ap`
+  naturality (`apComp`);
+* whiskering rules derived automatically from context hypotheses
+  (`rwhs` / `lwhs`);
+* Eckmann–Hilton fragments (`loop₁`, `compUniq`, `loop₂`, `comm`), closing
+  `ν ⬝ κ = κ ⬝ ν` on Ω(S¹) in a single `by path_simp`.
+
+It is regression-tested by the `path_simp` examples in
+[`GroundZero/Types/Id.lean`](GroundZero/Types/Id.lean) and the S¹ demos in
+[`GroundZero/HITs/Circle.lean`](GroundZero/HITs/Circle.lean).
+
+### ATP documentation and audit tooling
+
+See [Documentation](#documentation): `AIPROVER.md` (prover guide +
+axiom-reduction chart), `THEOREM_TIERS.md` (tiered theorem catalog), and
+`scripts/aiprover_audit.py` (declaration-inventory audit, wired into
+`make audit`).
 
 ## Documentation
 
@@ -20,8 +97,8 @@ begin cases p; cases q; apply Id.refl end
   on top of this library.  It is a living document: new lessons are added there
   as they are discovered.  It also carries a series axiom reduction chart
   (Section 10): which real-analysis axioms the Gaussian-kernel PSD proof
-  (`gaussPsd` in `PosDef.lean`) really needs, and which were reduced to
-  theorems across evaluation rounds 追記評価1–6.
+  (`gaussPsdD` in `PosDef.lean`) really needs, and which were reduced to
+  theorems across evaluation rounds 追記評価1–19.
 * [THEOREM_TIERS.md](THEOREM_TIERS.md) — a tiered catalog of the library's
   theorems for automated theorem provers.  Tier 1 lists the foundational core
   to try first (identity, transport, equivalences, funext, univalence,
@@ -70,23 +147,31 @@ the tier-classification conventions the audit protects.
 
 ## HITs
 
-[Most HITs in the library](https://github.com/rzrn/lean/tree/master/ground_zero/HITs) constructed using [quotients](https://leanprover.github.io/theorem_proving_in_lean/axioms_and_computation.html#quotients). Quotients in Lean have good computational properties (`Quot.ind` computes), so we can define HITs with them without any other changes in Lean’s kernel.
+Most HITs in the library are constructed using
+[quotients](https://leanprover.github.io/theorem_proving_in_lean/axioms_and_computation.html#quotients).
+Quotients in Lean have good computational properties (`Quot.ind` computes), so
+we can define HITs with them without any other changes in Lean's kernel.
 
 There are:
 
-* [Interval](https://github.com/rzrn/ground_zero/blob/master/GroundZero/HITs/Interval.lean) $I$.
-* [Pushout](https://github.com/rzrn/ground_zero/blob/master/GroundZero/HITs/Pushout.lean) $\alpha \sqcup^\sigma \beta $.
-* [Homotopical reals](https://github.com/rzrn/ground_zero/blob/master/GroundZero/HITs/Reals.lean) $R$.
-* (Sequential) [colimit](https://github.com/rzrn/ground_zero/blob/master/GroundZero/HITs/Colimit.lean).
-* [Generalized circle](https://github.com/rzrn/ground_zero/blob/master/GroundZero/HITs/Generalized.lean) $\{\alpha\}$.
-* [Propositional truncation](https://github.com/rzrn/ground_zero/blob/master/GroundZero/HITs/Merely.lean) as a colimit of a following sequence:
+* [Interval](GroundZero/HITs/Interval.lean) $I$.
+* [Pushout](GroundZero/HITs/Pushout.lean) $\alpha \sqcup^\sigma \beta $.
+* [Homotopical reals](GroundZero/HITs/Reals.lean) $R$.
+* (Sequential) [colimit](GroundZero/HITs/Colimit.lean).
+* [Generalized circle](GroundZero/HITs/Generalized.lean) $\{\alpha\}$.
+* [Propositional truncation](GroundZero/HITs/Merely.lean) as a colimit of a
+  following sequence:
   $` \alpha \rightarrow \{\alpha\} \rightarrow \{\{\alpha\}\} \rightarrow \ldots `$
-* [Suspension](https://github.com/rzrn/ground_zero/blob/master/GroundZero/HITs/Suspension.lean) $\Sigma \alpha$ is defined as the pushout of the span $\mathbf{1} \leftarrow \alpha \rightarrow \mathbf{1}$.
-* [Circle](https://github.com/rzrn/ground_zero/blob/master/GroundZero/HITs/Circle.lean) $S^1$ is the suspension of the bool $\mathbf{2}$.
-* Sphere $S^2$ is the suspension of the circle $S^1$.
-* [Join](https://github.com/rzrn/ground_zero/blob/master/GroundZero/HITs/Join.lean) $\alpha \ast \beta$.
+* [Suspension](GroundZero/HITs/Suspension.lean) $\Sigma \alpha$ is defined as
+  the pushout of the span $\mathbf{1} \leftarrow \alpha \rightarrow \mathbf{1}$.
+* [Circle](GroundZero/HITs/Circle.lean) $S^1$ is the suspension of the bool
+  $\mathbf{2}$.
+* Sphere $S^2$ is the suspension of the circle $S^1$.
+* [Join](GroundZero/HITs/Join.lean) $\alpha \ast \beta$.
 
-There are also HITs that cannot be constructed this way. These HITs are defined using standard trick with [private structures](https://github.com/rzrn/ground_zero/blob/master/GroundZero/HITs/Trunc.lean).
+There are also HITs that cannot be constructed this way. These HITs are defined
+using standard trick with
+[private structures](GroundZero/HITs/Trunc.lean).
 
 ## Dependency map
 
@@ -94,26 +179,40 @@ There are also HITs that cannot be constructed this way. These HITs are defined 
 
 ## Related works
 
-* [sinhp/HoTTLean](https://github.com/sinhp/HoTTLean) is a Lean formalization of the groupoid model of homotopy type theory together with a proof mode for developing mathematics synthetically in those type theories.
-* [jthulhu/2ltt](https://github.com/jthulhu/2ltt) is a formalization of [2LTT](https://ncatlab.org/nlab/show/two-level+type+theory) in Lean 4.
-* [gebner/hott3](https://github.com/gebner/hott3) is a port of the Lean 2 HoTT library to Lean 3.
-* [leanprover/lean2/hott](https://github.com/leanprover/lean2/blob/master/hott/hott.md) is an old Lean 2 HoTT library.
-* [cmu-phil/Spectral](https://github.com/cmu-phil/Spectral) is a formalization of the Serre spectral sequence in Lean 2.
-* [annenkov/two-level](https://github.com/annenkov/two-level) is a Lean 2 formalization of 2LTT.
-* [bbentzen/hott-book-in-lean](https://github.com/bbentzen/hott-book-in-lean) is a formalization of the Part I of the HoTT book in Lean 2.
+* [rzrn/ground_zero](https://github.com/rzrn/ground_zero) — the base HoTT
+  library this repository derives from.
+* [sinhp/HoTTLean](https://github.com/sinhp/HoTTLean) is a Lean formalization
+  of the groupoid model of homotopy type theory together with a proof mode for
+  developing mathematics synthetically in those type theories.
+* [jthulhu/2ltt](https://github.com/jthulhu/2ltt) is a formalization of
+  [2LTT](https://ncatlab.org/nlab/show/two-level+type+theory) in Lean 4.
+* [gebner/hott3](https://github.com/gebner/hott3) is a port of the Lean 2 HoTT
+  library to Lean 3.
+* [leanprover/lean2/hott](https://github.com/leanprover/lean2/blob/master/hott/hott.md)
+  is an old Lean 2 HoTT library.
+* [cmu-phil/Spectral](https://github.com/cmu-phil/Spectral) is a formalization
+  of the Serre spectral sequence in Lean 2.
+* [annenkov/two-level](https://github.com/annenkov/two-level) is a Lean 2
+  formalization of 2LTT.
+* [bbentzen/hott-book-in-lean](https://github.com/bbentzen/hott-book-in-lean)
+  is a formalization of the Part I of the HoTT book in Lean 2.
 
 ## License
 
 Copyright © 2018–2026 rzrn &lt;rzrngh@outlook.com&gt;
 
-Licensed under the Apache License, Version 2.0 (the “License”);
+Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this project except in compliance with the License.
 You may obtain a copy of the License at
 
 http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an “AS IS” BASIS,
+distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+This repository derives from [rzrn/ground_zero](https://github.com/rzrn/ground_zero)
+(Apache-2.0).  The base library is Copyright © 2018–2026 rzrn; the additions in
+[Extensions](#extensions) are distributed under the same license terms.
