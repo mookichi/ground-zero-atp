@@ -1,0 +1,13 @@
+*.olean
+*.cpp
+*.o
+*.a
+/nongithub
+/build
+/lean_packages
+/.lake
+
+# Local scratch / backup files (excluded from repo)
+*.lean.txt
+Bad.lean
+Sample.lean
