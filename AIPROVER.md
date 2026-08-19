@@ -466,9 +466,52 @@ Takeaways for ATPs:
 reduction, theoremization attempts); probes `/tmp/probe_cauchy.lean`
 (exp redefinition) and `/tmp/probe_lim.lean` (ε-N limit theory).
 
+## 11. Certified SMT-arithmetic export (oleansmt → Ground Zero)
+
+[`oleansmt`](https://github.com/mookichi/smt-lean4-rs) is a certified
+SMT-solver front-end.  Its arithmetic core proves the linear-arithmetic
+contradictions of an SMT run in a small *nanoda* kernel, then re-exports those
+proofs as ordinary Lean terms on top of Ground Zero's natural numbers.  The
+key point for an ATP: Ground Zero's `≤` is **max-based** — `LE.le n m :=
+max n m = m` — while nanoda's `le` is a *recursive* order (`le (succ n)
+(succ m) ≡ le n m`, with `lt a b := le (succ a) b`).  The two agree
+extensionally on `ℕ`, but the recursive `le` is not definitionally equal to
+the max-based `≤`, so the export **re-derives** each nanoda inference from
+preloaded Tier 1/2 theorems instead of transcribing it verbatim.
+
+The wrap table below is the complete bridge.  Every row was verified by
+compiling the generated file against this repository (`lake env lean`) — the
+Lean kernel accepts all four contradiction shapes (strict cycle, mixed cycle,
+single false literal, constant gap).
+
+| nanoda rule (recursive `le`/`lt`) | Ground Zero reconstruction |
+|---|---|
+| `le_trans : a ≤ b → b ≤ c → a ≤ c` | `le.trans` |
+| `lt_le_contra : a < b → b ≤ a → ⊥` | `le.neSucc a (le.trans h₁ h₂)` |
+| `lt_lt_contra : a < b → b < a → ⊥` | `le.neSucc a (le.trans (le.trans h₁ (le.leSucc b)) h₂)` |
+| `not_succ_le_zero : succ a ≤ 0 → ⊥` | `le.neSucc a (le.trans p (max.zeroLeft a))` |
+| `le_inj : a+1 ≤ b+1 → a ≤ b` | `le.inj` = `ap Nat.pred` |
+| constant gap `le c d` (`c > d`) | `le.neSucc d (le.trans (chain) h)` via a specialized `ArithGapContra` |
+
+Notes for a prover reusing this strategy:
+
+* `le_inj` is *reserved* in the nanoda kernel (a no-op there, since the
+  recursive `le` strips a leading `succ` pair definitionally) but is emitted
+  as `le.inj` in the Ground Zero target.
+* For a constant gap `c > d`, `le c d` is **not** literally `𝟎` under the
+  max-based encoding.  The exporter emits a specialized `ArithGapContra :
+h : c ≤ d → 𝟎` whose body is `le.neSucc d (le.trans (up) h)`, where `up :
+d+1 ≤ c` is built by a `le.trans`/`le.leSucc` chain from `max.refl (d+1)`.
+* `rfl`/`idp` do **not** reduce a max-based `≤` (Lean's `max` is `if`-based,
+  and `max n m = m` needs the case split), so every inequality in these proofs
+  is a real `le.trans` chain, never a bare reflexivity.
+
 ---
 
-*Last updated:* 2026-08-13 (`path_simp` extended with higher-order rules:
+*Last updated:* 2026-08-19 (§11 added: certified SMT-arithmetic export bridge
+`oleansmt → Ground Zero`, with the nanoda→Ground Zero wrap table and the
+max-based `≤` notes; Tier 2 gained `le.inj`.)  Previous updates:
+2026-08-13 (`path_simp` extended with higher-order rules:
 `ap`-naturality `apComp`, Eckmann–Hilton fragments
 `loop₁`/`compUniq`/`loop₂`/`comm` on 2-paths, and whiskering rules
 `rwhs`/`lwhs` derived from context 2-path hypotheses; S¹ demonstrations in
