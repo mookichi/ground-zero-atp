@@ -52,6 +52,42 @@ namespace GroundZero.Algebra
 
   hott instance (T : Overring) [H : orfield T] : OfNat T.carrier (Nat.succ Nat.zero) := ⟨H.tohasOne.one⟩
 
+  namespace Overring
+    /-- Build an `Overring` numeral by repeated addition of the multiplicative
+        identity: `n ↦ 0 + 1 + ⋯ + 1`. Non-computable because `Overring.τ`
+        (which carries non-computable proof data) has no executable code. -/
+    noncomputable def ofNat (T : Overring) [ring.hasOne T.τ] (n : ℕ) : T.carrier :=
+    Nat.rec T.τ.zero (fun _ acc => T.τ.φ acc (@ring.hasOne.one T.τ _)) n
+
+    variable (T : Overring)
+
+    /-- Division in a field: `a / b = a · b⁻¹`. -/
+    hott def rdiv [field T.τ] (a b : T.carrier) : T.carrier :=
+    T.τ.ψ a (@ring.hasInv.inv T.τ _ b)
+
+    /-- `≤` is reflexive. -/
+    hott def leRefl [order T.κ] (a : T.carrier) : T.ρ a a :=
+    @reflexive.refl T.κ _ a
+
+    /-- `≤` is transitive. -/
+    hott def leTrans [order T.κ] (a b c : T.carrier) (h : T.ρ a b) (k : T.ρ b c) : T.ρ a c :=
+    @transitive.trans T.κ _ a b c h k
+
+    /-- `a < b` and `b ≤ a` are contradictory. -/
+    hott def ltLeContra [order T.κ] (a b : T.carrier) (h : T.σ a b) (k : T.ρ b a) : 𝟎 :=
+    h.1 (@antisymmetric.asymm T.κ _ a b h.2 k)
+
+    /-- `a < b` and `b < a` are contradictory. -/
+    hott def ltLtContra [order T.κ] (a b : T.carrier) (h : T.σ a b) (k : T.σ b a) : 𝟎 :=
+    h.1 (@antisymmetric.asymm T.κ _ a b h.2 k.2)
+  end Overring
+
+  /-- Generic numeral instance for an `Overring` carrier. Deliberately low
+      priority so the specialized `0`/`1` instances (where present) keep their
+      definitional behaviour; this instance supplies numerals `n ≥ 2`. -/
+  noncomputable instance (priority := low) (T : Overring) {n : ℕ} [ring.hasOne T.τ] : OfNat T.carrier n :=
+  ⟨Overring.ofNat T n⟩
+
   hott def majorant {Γ : Orgraph} (φ : Γ.subset) (M : Γ.carrier) :=
   Π x, x ∈ φ → Γ.ρ x M
 
