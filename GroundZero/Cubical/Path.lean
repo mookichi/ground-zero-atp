@@ -258,18 +258,14 @@ section
 end
 
 hott definition meet {A : Type u} {a b : A} (p : Path A a b) : LineP (λ i, Path A a (p @ i)) :=
-Interval.ind (refl a) p
-(begin
-  apply Id.trans; apply Equiv.transportComp; transitivity; apply ap (transport _ · _);
-  apply Interval.recβrule; transitivity; apply transportEncode; apply coerceRefl
-end)
+  @Interval.ind (λ i, Path A a (p @ i)) (refl a) p
+    (by apply Id.trans; apply Equiv.transportComp; transitivity; apply ap (transport _ · _);
+        apply Interval.recβrule; transitivity; apply transportEncode; apply coerceRefl)
 
 hott definition join {A : Type u} {a b : A} (p : Path A a b) : LineP (λ i, Path A (p @ i) b) :=
-Interval.ind p (refl b)
-(begin
-  apply Id.trans; apply Equiv.transportComp (Path A · b); transitivity; apply ap (transport _ · _);
-  apply Interval.recβrule; transitivity; apply transportEncode; apply coerceComRev
-end)
+  @Interval.ind (λ i, Path A (p @ i) b) p (refl b)
+    (by apply Id.trans; apply Equiv.transportComp (Path A · b); transitivity; apply ap (transport _ · _);
+        apply Interval.recβrule; transitivity; apply transportEncode; apply coerceComRev)
 
 /-
 This doesn’t pass typechecking.

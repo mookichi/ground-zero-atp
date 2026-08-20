@@ -46,9 +46,9 @@ namespace GroundZero.Algebra
     (construct : Π a b x y, ∥Σ z, G.between x y z × G.congruent y z a b∥)
 
     class continuous (G : Pregeometry) :=
-    (cut (φ ψ : G.carrier → Prop) :
-      ∥Σ a, Π x y, (φ x).1 → (ψ y).1 → G.between a x y∥ →
-      ∥Σ b, Π x y, (φ x).1 → (ψ y).1 → G.between x b y∥)
+    (cut (φ ψ : G.carrier → Sort 0) :
+      ∥Σ a, Π x y, (φ x) → (ψ y) → G.between a x y∥ →
+      ∥Σ b, Π x y, (φ x) → (ψ y) → G.between x b y∥)
 
     class absolute (G : Pregeometry) extends geometry G, isotropic G :=
     (five : Π x₁ y₁ z₁ u₁ x₂ y₂ z₂ u₂, ¬(x₁ = y₁) → G.between x₁ y₁ z₁ → G.between x₂ y₂ z₂ →
@@ -59,7 +59,7 @@ namespace GroundZero.Algebra
     hott def segment (G : Pregeometry) (a b : G.carrier) : Ens G.carrier :=
     ⟨λ c, G.between a c b, λ _, G.prop₁⟩
 
-    hott def geodesic (G : Pregeometry) (a b : G.carrier) : Ens G.carrier :=
+    hott def geodesic (G : Pregeometry) (a b : G.carrier) : Ens.{u, 0} G.carrier :=
     ⟨G.collinear a b, λ _, Merely.uniq⟩
 
     hott def circle (G : Pregeometry) (a b : G.carrier) : Ens G.carrier :=
@@ -71,8 +71,9 @@ namespace GroundZero.Algebra
     hott def ray (G : Pregeometry) (a b : G.carrier) : Ens G.carrier :=
     ⟨λ c, ∥G.between a c b + G.between a b c∥, λ _, Merely.uniq⟩
 
+    set_option backward.isDefEq.respectTransparency false in
     class euclidean (G : Pregeometry) extends absolute G :=
-    (fifth : Π a₁ b₁ a₂ b₂ a₃ b₃,
+    (fifth : Π (a₁ b₁ a₂ b₂ a₃ b₃ : G.carrier),
       Ens.parallel (geodesic G a₁ b₁) (geodesic G a₃ b₃) →
       Ens.parallel (geodesic G a₂ b₂) (geodesic G a₃ b₃) →
       Ens.parallel (geodesic G a₁ b₁) (geodesic G a₂ b₂))

@@ -16,8 +16,8 @@ namespace GroundZero.Algebra
 
   notation "ℝ" => Alg.carrier R
 
-  hott instance R.orfield : orfield R := R.dedekind.{0}.toorfield
-  hott instance R.hasInv : ring.hasInv R.τ := R.dedekind.{0}.tohasInv
+  hott instance R.orfield : orfield R := R.dedekind.toorfield
+  hott instance R.hasInv : ring.hasInv R.τ := R.dedekind.tohasInv
 
   /-- Negation distributes over addition in the additive group: -(a + b) = -a + -b. -/
   hott definition negAdd (a b : ℝ) : -(a + b) = -a + -b :=

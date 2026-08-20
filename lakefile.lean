@@ -6,7 +6,9 @@ package GroundZero {
     ⟨`linter.deprecated, false⟩,
     ⟨`linter.unusedVariables, false⟩,
     ⟨`relaxedAutoImplicit, false⟩,
-    ⟨`autoImplicit, false⟩
+    ⟨`autoImplicit, false⟩,
+    ⟨`backward.isDefEq.respectTransparency, false⟩,
+    ⟨`backward.do.legacy, false⟩
   ]
 }
 

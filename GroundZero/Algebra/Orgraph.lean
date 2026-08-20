@@ -262,12 +262,12 @@ namespace GroundZero.Algebra
   end
 
   -- or complete at top
-  class complete (Γ : Orgraph) :=
-  (sup : Π (φ : Γ.subset), φ.inh → majorized φ → exactness (Majorant φ))
+  class complete (Γ : Orgraph.{u, v}) :=
+  (sup : Π (φ : Ens.{u, v} Γ.carrier), Ens.inh φ → majorized φ → exactness (Majorant φ))
 
   -- or complete at bottom
-  class cocomplete (Γ : Orgraph) :=
-  (inf : Π (φ : Γ.subset), φ.inh → minorized φ → coexactness (Minorant φ))
+  class cocomplete (Γ : Orgraph.{u, v}) :=
+  (inf : Π (φ : Ens.{u, v} Γ.carrier), Ens.inh φ → minorized φ → coexactness (Minorant φ))
 
   hott def supremumUniqueness {Γ : Orgraph} [total Γ] (φ : Γ.subset) : prop (Σ M, exact (Majorant φ) M) :=
   begin

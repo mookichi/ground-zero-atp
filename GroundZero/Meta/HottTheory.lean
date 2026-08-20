@@ -120,17 +120,15 @@ partial def checkDeclAux (chain : List Name) (tag : Syntax) (name : Name) : Meta
   } else return ()
 }
 
-def checkDecl (tag : Syntax) (name : Name) := do {
-  checkDeclAux [name] tag name;
+def checkDecl (tag : Syntax) (name : Name) : MetaM Unit := do
+  checkDeclAux [name] tag name
 
-  let env ← getEnv; let prohibited := prohibitedAxioms.getState env;
-  if ¬prohibited.isEmpty then {
-    let (_, s) := ((CollectAxioms.collect name).run env).run {};
-
-    s.axioms.forM λ n => do if prohibited.contains n then
-      throwErrorAt tag "“{n}” is prohibited in the current scope."
-  }
-}
+  let env ← getEnv; let prohibited := prohibitedAxioms.getState env
+  if ¬prohibited.isEmpty then do
+    let axioms ← Lean.collectAxioms name
+    for n in axioms do
+      if prohibited.contains n then
+        throwErrorAt tag "“{n}” is prohibited in the current scope."
 
 def defTok := leading_parser
     "def "         <|> "definition " <|> "theorem "   <|> "lemma "
