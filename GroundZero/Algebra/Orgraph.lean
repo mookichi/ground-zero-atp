@@ -80,6 +80,10 @@ namespace GroundZero.Algebra
     /-- `a < b` and `b < a` are contradictory. -/
     hott def ltLtContra [order T.κ] (a b : T.carrier) (h : T.σ a b) (k : T.σ b a) : 𝟎 :=
     h.1 (@antisymmetric.asymm T.κ _ a b h.2 k.2)
+
+    /-- A strict inequality implies the non-strict one: `a < b → a ≤ b`. -/
+    hott def leOfLt [order T.κ] (a b : T.carrier) (h : T.σ a b) : T.ρ a b :=
+    h.2
   end Overring
 
   /-- Generic numeral instance for an `Overring` carrier. Deliberately low
