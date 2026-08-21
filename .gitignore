@@ -11,3 +11,4 @@
 *.lean.txt
 Bad.lean
 Sample.lean
+SmtGen.lean
