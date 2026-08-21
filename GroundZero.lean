@@ -3,6 +3,7 @@ import GroundZero.Algebra.Basic
 import GroundZero.Algebra.Boolean
 import GroundZero.Algebra.Category
 import GroundZero.Algebra.EilenbergMacLane
+import GroundZero.Algebra.Euclidean
 import GroundZero.Algebra.Geometry
 import GroundZero.Algebra.Group.Action
 import GroundZero.Algebra.Group.Alternating

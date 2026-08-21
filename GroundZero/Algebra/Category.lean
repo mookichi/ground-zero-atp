@@ -379,6 +379,7 @@ namespace Category
     exact Id.inv r; apply mulAssoc
   end
 
+  @[reducible]
   hott def dual (𝒞 : Precategory) (η : category 𝒞) : category 𝒞ᵒᵖ :=
   { defDec      := @defDec 𝒞 η,
     bottomLeft  := @bottomRight 𝒞 η,
@@ -394,6 +395,7 @@ namespace Category
     mulAssoc    := λ _ _ _, (@mulAssoc 𝒞 η _ _ _)⁻¹,
     mulDef      := λ a b α β, Iff.comp (@mulDef 𝒞 η b a β α) (Id.inv, Id.inv) }
 
+  @[reducible]
   hott instance (𝒞 : Precategory) [η : category 𝒞] : category 𝒞ᵒᵖ := dual 𝒞 η
 
   /-
